@@ -38,6 +38,20 @@ type PlatformSpecificParams struct {
 	// uses multiple file descriptors (queues) to parallelize packets sending
 	// or receiving.
 	MultiQueue bool
+
+	VnetHdrSize uint
+
+	TunFCSum bool
+
+	TunFTso4 bool
+
+	TunFTso6 bool
+
+	TunFTsoEcn bool
+
+	TunFUso4 bool
+
+	TunFUso6 bool
 }
 
 func defaultPlatformSpecificParams() PlatformSpecificParams {

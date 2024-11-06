@@ -74,6 +74,44 @@ func setDeviceOptions(fd uintptr, config Config) (err error) {
 		}
 	}
 
+	if config.PlatformSpecificParams.VnetHdrSize != 0 {
+		if err = ioctl(fd, syscall.TUNSETVNETHDRSZ, uintptr(config.PlatformSpecificParams.VnetHdrSize)); err != nil {
+			return
+		}
+	}
+
+	var off_flags uint = 0
+
+	if config.PlatformSpecificParams.TunFCSum {
+		off_flags |= 1
+	}
+
+	if config.PlatformSpecificParams.TunFTso4 {
+		off_flags |= 2
+	}
+
+	if config.PlatformSpecificParams.TunFTso6 {
+		off_flags |= 4
+	}
+
+	if config.PlatformSpecificParams.TunFTsoEcn {
+		off_flags |= 8
+	}
+
+	if config.PlatformSpecificParams.TunFUso4 {
+		off_flags |= 32
+	}
+
+	if config.PlatformSpecificParams.TunFUso6 {
+		off_flags |= 64
+	}
+
+	if off_flags != 0 {
+		if err = ioctl(fd, syscall.TUNSETOFFLOAD, uintptr(off_flags)); err != nil {
+			return
+		}
+	}
+
 	// set clear the persist flag
 	value := 0
 	if config.Persist {
