@@ -75,7 +75,8 @@ func setDeviceOptions(fd uintptr, config Config) (err error) {
 	}
 
 	if config.PlatformSpecificParams.VnetHdrSize != 0 {
-		if err = ioctl(fd, syscall.TUNSETVNETHDRSZ, uintptr(config.PlatformSpecificParams.VnetHdrSize)); err != nil {
+		var vnetHdrSize uint = config.PlatformSpecificParams.VnetHdrSize
+		if err = ioctl(fd, syscall.TUNSETVNETHDRSZ, uintptr(unsafe.Pointer(&vnetHdrSize))); err != nil {
 			return
 		}
 	}
