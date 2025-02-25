@@ -1,6 +1,8 @@
 package water
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"syscall"
@@ -57,7 +59,7 @@ func createInterface(fd uintptr, ifName string, flags uint16) (createdIFName str
 
 	err = ioctl(fd, syscall.TUNSETIFF, uintptr(unsafe.Pointer(&req)))
 	if err != nil {
-		return
+		return "", errors.Join(err, fmt.Errorf("ioctl(fd, TUNSETIFF, %s)", ifName))
 	}
 
 	createdIFName = strings.Trim(string(req.Name[:]), "\x00")
@@ -67,17 +69,17 @@ func createInterface(fd uintptr, ifName string, flags uint16) (createdIFName str
 func setDeviceOptions(fd uintptr, config Config) (err error) {
 	if config.Permissions != nil {
 		if err = ioctl(fd, syscall.TUNSETOWNER, uintptr(config.Permissions.Owner)); err != nil {
-			return
+			return errors.Join(err, fmt.Errorf("ioctl(fd, TUNSETOWNER, %d)", config.Permissions.Owner))
 		}
 		if err = ioctl(fd, syscall.TUNSETGROUP, uintptr(config.Permissions.Group)); err != nil {
-			return
+			return errors.Join(err, fmt.Errorf("ioctl(fd, TUNSETGROUP, %d)", config.Permissions.Group))
 		}
 	}
 
 	if config.PlatformSpecificParams.VnetHdrSize != 0 {
 		var vnetHdrSize uint = config.PlatformSpecificParams.VnetHdrSize
 		if err = ioctl(fd, syscall.TUNSETVNETHDRSZ, uintptr(unsafe.Pointer(&vnetHdrSize))); err != nil {
-			return
+			return errors.Join(err, fmt.Errorf("ioctl(fd, TUNSETVNETHDRSZ, %d)", config.PlatformSpecificParams.VnetHdrSize))
 		}
 	}
 
@@ -109,7 +111,7 @@ func setDeviceOptions(fd uintptr, config Config) (err error) {
 
 	if off_flags != 0 {
 		if err = ioctl(fd, syscall.TUNSETOFFLOAD, uintptr(off_flags)); err != nil {
-			return
+			return errors.Join(err, fmt.Errorf("ioctl(fd, TUNSETOFFLOAD, %d)", off_flags))
 		}
 	}
 
@@ -118,5 +120,9 @@ func setDeviceOptions(fd uintptr, config Config) (err error) {
 	if config.Persist {
 		value = 1
 	}
-	return ioctl(fd, syscall.TUNSETPERSIST, uintptr(value))
+
+	if err = ioctl(fd, syscall.TUNSETPERSIST, uintptr(value)); err != nil {
+		return errors.Join(err, fmt.Errorf("ioctl(fd, TUNSETPERSIST, %d)", value))
+	}
+	return err
 }
