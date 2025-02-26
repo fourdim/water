@@ -111,7 +111,16 @@ func setDeviceOptions(fd uintptr, config Config) (err error) {
 
 	if off_flags != 0 {
 		if err = ioctl(fd, syscall.TUNSETOFFLOAD, uintptr(off_flags)); err != nil {
-			return errors.Join(err, fmt.Errorf("ioctl(fd, TUNSETOFFLOAD, %d)", off_flags))
+			// Clear the flags that are not supported in earlier kernels
+			if config.PlatformSpecificParams.TunFUso4 {
+				off_flags &= ^uint(32)
+			}
+			if config.PlatformSpecificParams.TunFUso6 {
+				off_flags &= ^uint(64)
+			}
+			if err = ioctl(fd, syscall.TUNSETOFFLOAD, uintptr(off_flags)); err != nil {
+				return errors.Join(err, fmt.Errorf("ioctl(fd, TUNSETOFFLOAD, %d)", off_flags))
+			}
 		}
 	}
 
